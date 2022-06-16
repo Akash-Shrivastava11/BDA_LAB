@@ -1,0 +1,102 @@
+1.  Create keyspace
+
+CREATE KEYSPACE employee;
+
+2. create employee table
+
+create table employee_in( emp_id int, emp_name text, desig text, dateofjoin date, salary float, dept text, PRIMARY KEY(emp_id,salary));
+
+3. Insert data interms of batches
+BEGIN BATCH
+            ... INSERT INTO employee_in(emp_id,emp_name,desig,dateofjoin,salary,dept) VALUES (1,'Karan
+            ... ','Manager','2021-06-12',1000000,'HR')
+            ... INSERT INTO employee_in(emp_id,emp_name,desig,dateofjoin,salary,dept) VALUES (2,'Rajesh Meheta','associate SE','2020-04-20',600000,'Tech')
+            ... INSERT INTO employee_in(emp_id,emp_name,desig,dateofjoin,salary,dept) VALUES (3,'Vihnu Chauhan','associate SE','2020-05-20',600000,'Tech')
+            ... INSERT INTO employee_in(emp_id,emp_name,desig,dateofjoin,salary,dept) VALUES (4,'Shweta Tripathi','associate SE','2020-05-20',600000,'Tech')
+            ... APPLY BATCH
+            ... ;
+4. Update one emp_name and dept in the table
+select * from employee_in
+            ... ;
+
+ emp_id | salary | dateofjoin | dept | desig        | emp_name
+--------+--------+------------+------+--------------+-----------------
+      1 |  1e+06 | 2021-06-12 |   HR |      Manager |         Karan\n
+      2 |  6e+05 | 2020-04-20 | Tech | associate SE |   Rajesh Meheta
+      4 |  6e+05 | 2020-05-20 | Tech | associate SE | Shweta Tripathi
+      3 |  6e+05 | 2020-05-20 | Tech | associate SE |   Vihnu Chauhan
+
+update employee_in SET emp_name='Vishnu Chauhan',dept='Technical' where emp_id=3 AND salary=600000;
+
+select * from employee_in ;
+
+ emp_id | salary | dateofjoin | dept      | desig        | emp_name
+--------+--------+------------+-----------+--------------+-----------------
+      1 |  1e+06 | 2021-06-12 |        HR |      Manager |         Karan\n
+      2 |  6e+05 | 2020-04-20 |      Tech | associate SE |   Rajesh Meheta
+      4 |  6e+05 | 2020-05-20 |      Tech | associate SE | Shweta Tripathi
+      3 |  6e+05 | 2020-05-20 | Technical | associate SE |  Vishnu Chauhan
+
+5. SORT the entire employee table on Salary
+select * from employee_in where emp_id IN(1,2,3,4) ORDER BY salary DESC allow filtering;
+
+ emp_id | salary | dateofjoin | dept      | desig        | emp_name
+--------+--------+------------+-----------+--------------+-----------------
+      1 |  1e+06 | 2021-06-12 |        HR |      Manager |         Karan\n
+      2 |  6e+05 | 2020-04-20 |      Tech | associate SE |   Rajesh Meheta
+      3 |  6e+05 | 2020-05-20 | Technical | associate SE |  Vishnu Chauhan
+      4 |  6e+05 | 2020-05-20 |      Tech | associate SE | Shweta Tripathi
+
+6. Add projects column to the table
+
+ALTER TABLE employee_in ADD projects list<text>;
+
+select * from employee_in ;
+
+ emp_id | salary | dateofjoin | dept      | desig        | emp_name        | projects
+--------+--------+------------+-----------+--------------+-----------------+----------
+      1 |  1e+06 | 2021-06-12 |        HR |      Manager |         Karan\n |     null
+      2 |  6e+05 | 2020-04-20 |      Tech | associate SE |   Rajesh Meheta |     null
+      4 |  6e+05 | 2020-05-20 |      Tech | associate SE | Shweta Tripathi |     null
+      3 |  6e+05 | 2020-05-20 | Technical | associate SE |  Vishnu Chauhan |     null
+
+7.  update the projects in the table
+
+>update employee_in SET projects=['CCF','CCD','KMAP'] where emp_id=3 AND salary=600000;
+>update employee_in SET projects=['AAP','BJP','TMC'] where emp_id=4 AND salary=600000;
+>select * from employee_in ;
+
+ emp_id | salary | dateofjoin | dept      | desig        | emp_name        | projects
+--------+--------+------------+-----------+--------------+-----------------+------------------------
+      1 |  1e+06 | 2021-06-12 |        HR |      Manager |         Karan\n |                   null
+      2 |  6e+05 | 2020-04-20 |      Tech | associate SE |   Rajesh Meheta |                   null
+      4 |  6e+05 | 2020-05-20 |      Tech | associate SE | Shweta Tripathi |  ['AAP', 'BJP', 'TMC']
+      3 |  6e+05 | 2020-05-20 | Technical | associate SE |  Vishnu Chauhan | ['CCF', 'CCD', 'KMAP']
+
+8. CREATE TTL of 15 seconds to display values of employees
+>update employee_in USING TTL 15  SET emp_name='Karan Sharma' where emp_id=1 AND salary=600000;
+//BEFORE 15 seconds
+> select * from employee_in ;
+
+ emp_id | salary | dateofjoin | dept      | desig        | emp_name        | projects
+--------+--------+------------+-----------+--------------+-----------------+------------------------
+      1 |  6e+05 |       null |      null |         null |    Karan Sharma |                   null
+      1 |  1e+06 | 2021-06-12 |        HR |      Manager |         Karan\n |                   null
+      2 |  6e+05 | 2020-04-20 |      Tech | associate SE |   Rajesh Meheta |                   null
+      4 |  6e+05 | 2020-05-20 |      Tech | associate SE | Shweta Tripathi |  ['AAP', 'BJP', 'TMC']
+      3 |  6e+05 | 2020-05-20 | Technical | associate SE |  Vishnu Chauhan | ['CCF', 'CCD', 'KMAP']
+
+
+
+
+//AFTER 15 seconds
+> select * from employee_in ;
+
+ emp_id | salary | dateofjoin | dept      | desig        | emp_name        | projects
+--------+--------+------------+-----------+--------------+-----------------+------------------------
+      1 |  1e+06 | 2021-06-12 |        HR |      Manager |         Karan\n |                   null
+      2 |  6e+05 | 2020-04-20 |      Tech | associate SE |   Rajesh Meheta |                   null
+      4 |  6e+05 | 2020-05-20 |      Tech | associate SE | Shweta Tripathi |  ['AAP', 'BJP', 'TMC']
+      3 |  6e+05 | 2020-05-20 | Technical | associate SE |  Vishnu Chauhan | ['CCF', 'CCD', 'KMAP']
+
+(4 rows)
